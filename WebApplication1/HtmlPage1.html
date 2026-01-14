@@ -1,0 +1,665 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>教师列表</title>
+    <!-- Vue CDN -->
+    <script src="Scripts/vue.min.js"></script>
+    <!-- Axios CDN -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/axios/0.27.2/axios.min.js"></script>
+    <!-- Element UI -->
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/element-ui/2.15.14/theme-chalk/index.css">
+    <script src="https://cdn.bootcdn.net/ajax/libs/element-ui/2.15.14/index.js"></script>
+</head>
+<body>
+    <div id="app" style="margin: 20px;">
+        <el-card>
+            <div slot="header">
+                <h2>教师信息列表</h2>
+            </div>
+
+            <!-- 查询区域 -->
+            <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                <el-input v-model="searchKey"
+                          placeholder="请输入工号或姓名搜索"
+                          style="width: 300px;"
+                          clearable>
+                </el-input>
+
+                <el-select v-model="selectedGender"
+                           placeholder="请选择性别"
+                           clearable>
+                    <el-option label="男" value="男"></el-option>
+                    <el-option label="女" value="女"></el-option>
+                </el-select>
+
+                <el-button type="primary" @click="searchTeachers">查询</el-button>
+                <el-button @click="resetSearch">重置</el-button>
+                <el-button type="success" @click="showAddDialog">新增</el-button>
+
+                <!-- 新增功能按钮 -->
+                <el-button type="info" @click="showBatchEditDialog" :disabled="selectedTeachers.length === 0">批量编辑 ({{ selectedTeachers.length }})</el-button>
+                <el-button type="primary" @click="showImportDialog">导入</el-button>
+
+                <el-button type="warning" @click="exportExcel">导出Excel</el-button>
+            </div>
+
+            <!-- 教师列表表格 -->
+            <!-- 开启多选和自定义排序 -->
+            <el-table :data="teacherList"
+                      border style="width: 100%"
+                      @sort-change="handleSortChange"
+                      @selection-change="handleSelectionChange">
+                <el-table-column type="selection" width="55"></el-table-column>
+                <el-table-column prop="ZGH" label="职工号" width="120" sortable="custom"></el-table-column>
+                <el-table-column prop="XM" label="姓名" width="100" sortable="custom"></el-table-column>
+                <el-table-column prop="XB" label="性别" width="80" sortable="custom"></el-table-column>
+                <el-table-column prop="CSRQ" label="出生日期" width="150" sortable="custom"></el-table-column>
+                <el-table-column prop="LXDH" label="联系电话" width="150" sortable="custom"></el-table-column>
+                <el-table-column prop="ZZMM" label="政治面貌" width="120" sortable="custom"></el-table-column>
+                <el-table-column prop="MZ" label="民族" width="100" sortable="custom"></el-table-column>
+                <el-table-column label="操作" width="160">
+                    <template slot-scope="scope">
+                        <el-button type="text" @click="handleEdit(scope.row)">编辑</el-button>
+                        <el-button type="text" style="color: #f56c6c" @click="handleDelete(scope.row.ZGH)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-card>
+
+        <!-- 分页控件 -->
+        <div style="margin-top: 15px; text-align: right;">
+            <el-pagination @size-change="handleSizeChange"
+                           @current-change="handleCurrentChange"
+                           :current-page="currentPage"
+                           :page-sizes="[5, 10, 20, 50]"
+                           :page-size="pageSize"
+                           layout="total, sizes, prev, pager, next, jumper"
+                           :total="totalCount">
+            </el-pagination>
+        </div>
+
+        <!-- 新增教师弹窗 -->
+        <el-dialog title="新增教师信息" :visible.sync="addDialogVisible" width="500px">
+            <el-form :model="addForm" :rules="addRules" ref="addForm" label-width="100px">
+                <!-- 职工号 -->
+                <el-form-item label="职工号" prop="ZGH">
+                    <el-input v-model="addForm.ZGH" placeholder="请输入职工号"></el-input>
+                </el-form-item>
+                <!-- 姓名 -->
+                <el-form-item label="姓名" prop="XM">
+                    <el-input v-model="addForm.XM" placeholder="请输入姓名"></el-input>
+                </el-form-item>
+                <!-- 性别 -->
+                <el-form-item label="性别" required prop="XB">
+                    <el-select v-model="addForm.XB" placeholder="请选择性别">
+                        <el-option label="男" value="男"></el-option>
+                        <el-option label="女" value="女"></el-option>
+                    </el-select>
+                </el-form-item>
+                <!-- 其他字段与编辑弹窗相同 -->
+                <!-- 出生日期 -->
+                <el-form-item label="出生日期">
+                    <el-date-picker v-model="addForm.CSRQ"
+                                    type="date"
+                                    placeholder="选择出生日期"
+                                    value-format="yyyy-MM-dd">
+                    </el-date-picker>
+                </el-form-item>
+                <!-- 联系电话 -->
+                <el-form-item label="联系电话">
+                    <el-input v-model="addForm.LXDH" placeholder="请输入联系电话"></el-input>
+                </el-form-item>
+                <!-- 政治面貌 -->
+                <el-form-item label="政治面貌">
+                    <el-select v-model="addForm.ZZMM" placeholder="请选择政治面貌">
+                        <el-option label="中共党员" value="中共党员"></el-option>
+                        <el-option label="中共预备党员" value="中共预备党员"></el-option>
+                        <el-option label="共青团员" value="共青团员"></el-option>
+                        <el-option label="民主党派" value="民主党派"></el-option>
+                        <el-option label="群众" value="群众"></el-option>
+                    </el-select>
+                </el-form-item>
+                <!-- 民族 -->
+                <el-form-item label="民族">
+                    <el-select v-model="addForm.MZ" placeholder="请选择民族">
+                        <el-option label="汉族" value="汉族"></el-option>
+                        <el-option label="蒙古族" value="蒙古族"></el-option>
+                        <el-option label="回族" value="回族"></el-option>
+                        <el-option label="藏族" value="藏族"></el-option>
+                        <el-option label="维吾尔族" value="维吾尔族"></el-option>
+                        <el-option label="苗族" value="苗族"></el-option>
+                        <el-option label="彝族" value="彝族"></el-option>
+                        <el-option label="壮族" value="壮族"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="addDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="saveAdd">确定</el-button>
+            </div>
+        </el-dialog>
+
+        <!-- 编辑弹窗 -->
+        <el-dialog title="编辑教师信息" :visible.sync="dialogVisible" width="500px">
+            <el-form :model="form" label-width="100px">
+                <!-- 职工号（只读） -->
+                <el-form-item label="职工号">
+                    <el-input v-model="form.ZGH" disabled></el-input>
+                </el-form-item>
+                <!-- 姓名（只读） -->
+                <el-form-item label="姓名">
+                    <el-input v-model="form.XM" disabled></el-input>
+                </el-form-item>
+                <!-- 性别 -->
+                <el-form-item label="性别" required>
+                    <el-select v-model="form.XB" placeholder="请选择性别">
+                        <el-option label="男" value="男"></el-option>
+                        <el-option label="女" value="女"></el-option>
+                    </el-select>
+                </el-form-item>
+                <!-- 出生日期 -->
+                <el-form-item label="出生日期">
+                    <el-date-picker v-model="form.CSRQ"
+                                    type="date"
+                                    placeholder="选择出生日期"
+                                    value-format="yyyy-MM-dd">
+                    </el-date-picker>
+                </el-form-item>
+                <!-- 联系电话 -->
+                <el-form-item label="联系电话">
+                    <el-input v-model="form.LXDH" placeholder="请输入联系电话"></el-input>
+                </el-form-item>
+                <!-- 政治面貌 -->
+                <el-form-item label="政治面貌">
+                    <el-select v-model="form.ZZMM" placeholder="请选择政治面貌">
+                        <el-option label="中共党员" value="中共党员"></el-option>
+                        <el-option label="中共预备党员" value="中共预备党员"></el-option>
+                        <el-option label="共青团员" value="共青团员"></el-option>
+                        <el-option label="民主党派" value="民主党派"></el-option>
+                        <el-option label="群众" value="群众"></el-option>
+                    </el-select>
+                </el-form-item>
+                <!-- 民族 -->
+                <el-form-item label="民族">
+                    <el-select v-model="form.MZ" placeholder="请选择民族">
+                        <el-option label="汉族" value="汉族"></el-option>
+                        <el-option label="蒙古族" value="蒙古族"></el-option>
+                        <el-option label="回族" value="回族"></el-option>
+                        <el-option label="藏族" value="藏族"></el-option>
+                        <el-option label="维吾尔族" value="维吾尔族"></el-option>
+                        <el-option label="苗族" value="苗族"></el-option>
+                        <el-option label="彝族" value="彝族"></el-option>
+                        <el-option label="壮族" value="壮族"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="saveEdit">确定</el-button>
+            </div>
+        </el-dialog>
+
+        <!-- 新增：批量编辑弹窗 -->
+        <el-dialog title="批量编辑教师信息" :visible.sync="batchEditDialogVisible" width="500px">
+            <el-alert title="仅对已选中的记录进行编辑，未勾选的字段将保持不变。" type="info" show-icon :closable="false" style="margin-bottom: 20px;"></el-alert>
+            <el-form :model="batchEditForm" label-width="100px">
+                <!-- 性别 -->
+                <el-form-item label="性别">
+                    <el-checkbox v-model="batchEditFields.XB" style="margin-right: 15px;">启用</el-checkbox>
+                    <el-select v-model="batchEditForm.XB" placeholder="请选择性别" :disabled="!batchEditFields.XB">
+                        <el-option label="男" value="男"></el-option>
+                        <el-option label="女" value="女"></el-option>
+                    </el-select>
+                </el-form-item>
+
+                <!-- 政治面貌 -->
+                <el-form-item label="政治面貌">
+                    <el-checkbox v-model="batchEditFields.ZZMM" style="margin-right: 15px;">启用</el-checkbox>
+                    <el-select v-model="batchEditForm.ZZMM" placeholder="请选择政治面貌" :disabled="!batchEditFields.ZZMM">
+                        <el-option label="中共党员" value="中共党员"></el-option>
+                        <el-option label="中共预备党员" value="中共预备党员"></el-option>
+                        <el-option label="共青团员" value="共青团员"></el-option>
+                        <el-option label="民主党派" value="民主党派"></el-option>
+                        <el-option label="群众" value="群众"></el-option>
+                    </el-select>
+                </el-form-item>
+
+                <!-- 民族 -->
+                <el-form-item label="民族">
+                    <el-checkbox v-model="batchEditFields.MZ" style="margin-right: 15px;">启用</el-checkbox>
+                    <el-select v-model="batchEditForm.MZ" placeholder="请选择民族" :disabled="!batchEditFields.MZ">
+                        <el-option label="汉族" value="汉族"></el-option>
+                        <el-option label="蒙古族" value="蒙古族"></el-option>
+                        <el-option label="回族" value="回族"></el-option>
+                        <el-option label="藏族" value="藏族"></el-option>
+                        <el-option label="维吾尔族" value="维吾尔族"></el-option>
+                        <el-option label="苗族" value="苗族"></el-option>
+                        <el-option label="彝族" value="彝族"></el-option>
+                        <el-option label="壮族" value="壮族"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="batchEditDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="saveBatchEdit">确定批量修改</el-button>
+            </div>
+        </el-dialog>
+
+        <!-- 新增：导入弹窗 -->
+        <el-dialog title="导入教师信息" :visible.sync="importDialogVisible" width="600px">
+            <el-steps :active="importStep" align-center style="margin-bottom: 20px;">
+                <el-step title="下载模板" icon="el-icon-download"></el-step>
+                <el-step title="上传文件" icon="el-icon-upload"></el-step>
+                <el-step title="查看结果" icon="el-icon-document-checked"></el-step>
+            </el-steps>
+
+            <div v-if="importStep === 0" style="text-align: center;">
+                <p>请先下载模板，按要求填写数据后上传。</p>
+                <el-button type="success" icon="el-icon-download" @click="downloadImportTemplate">下载导入模板</el-button>
+                <el-button @click="importStep = 1">下一步：上传文件</el-button>
+            </div>
+
+            <div v-if="importStep === 1">
+                <el-upload class="upload-demo"
+                           action="/api/JSXXBApi/ImportExcel"
+                           :headers="uploadHeaders"
+                           :on-success="handleImportSuccess"
+                           :on-error="handleImportError"
+                           :before-upload="beforeImportUpload"
+                           :file-list="fileList"
+                           :limit="1"
+                           :on-exceed="handleExceed"
+                           :auto-upload="true"
+                           :data="{ skipValidation: true }"
+                           accept=".xlsx,.xls">
+                    <el-button size="small" type="primary">点击上传文件</el-button>
+                    <div slot="tip" class="el-upload__tip">只能上传 xls/xlsx 文件，且大小不超过 5MB</div>
+                </el-upload>
+            </div>
+
+            <div v-if="importStep === 2">
+                <h3>导入结果详情</h3>
+                <el-alert :title="'成功导入/更新：' + importResult.successCount + ' 条'" type="success" show-icon></el-alert>
+                <el-alert :title="'处理失败：' + importResult.failCount + ' 条'" type="error" show-icon style="margin-top: 10px;"></el-alert>
+                <el-table :data="importResult.details" max-height="300" border style="width: 100%; margin-top: 10px;">
+                    <el-table-column prop="ZGH" label="职工号" width="100"></el-table-column>
+                    <el-table-column prop="XM" label="姓名" width="100"></el-table-column>
+                    <el-table-column prop="Status" label="状态" width="80">
+                        <template slot-scope="scope">
+                            <el-tag :type="scope.row.IsSuccess ? 'success' : 'danger'">{{ scope.row.Status }}</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="Message" label="消息/原因"></el-table-column>
+                </el-table>
+                <div style="text-align: right; margin-top: 20px;">
+                    <el-button @click="importDialogVisible = false">关闭</el-button>
+                    <el-button type="primary" @click="importStep = 0">重新导入</el-button>
+                </div>
+            </div>
+
+            <div slot="footer" class="dialog-footer" v-if="importStep !== 2">
+                <el-button @click="importDialogVisible = false">取消</el-button>
+            </div>
+        </el-dialog>
+    </div>
+
+    <script>
+        //全局响应拦截器
+        //判断登录状态
+        axios.interceptors.response.use(
+            response => {
+                return response;
+            },
+            error => {
+                if (error.response && error.response.status === 401) {
+                    // 注意：这里使用 ELEMENT (全大写)
+                    if (typeof ELEMENT !== 'undefined') {
+                        ELEMENT.Message.error('登录已过期或未登录，请重新登录');
+                    } else {
+                        alert('登录已过期或未登录，请重新登录');
+                    }
+                    setTimeout(() => {
+                        const currentUrl = encodeURIComponent(window.location.href);
+                        window.location.href = `Login.html?returnUrl=${currentUrl}`;
+                    }, 1000);
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    teacherList: [],        // 教师数据
+                    searchKey: '',          // 搜索关键词
+                    selectedGender: '',     // 选中的性别
+                    dialogVisible: false,   // 编辑弹窗显示状态
+                    addDialogVisible: false,// 新增弹窗显示状态
+                    form: {},               // 编辑表单数据
+                    addForm: {},            // 新增表单数据
+                    currentPage: 1,         // 当前页码
+                    pageSize: 10,           // 每页条数
+                    totalCount: 0,          // 总记录数
+                    sortBy: 'ZGH',          // 排序字段
+                    sortOrder: 'asc',       // 排序方向
+                    selectedTeachers: [],   // 新增：选中批量操作的教师列表
+
+                    // 新增：批量编辑相关
+                    batchEditDialogVisible: false,
+                    batchEditForm: { XB: '', ZZMM: '', MZ: '' },
+                    batchEditFields: { XB: false, ZZMM: false, MZ: false },
+
+                    // 新增：导入相关
+                    importDialogVisible: false,
+                    importStep: 0, // 0: 下载模板, 1: 上传文件, 2: 查看结果
+                    fileList: [],
+                    uploadHeaders: {}, // 如果需要传递认证头，在此配置
+                    importResult: { successCount: 0, failCount: 0, details: [] },
+
+                    // 新增表单验证规则
+                    addRules: {
+                        ZGH: [
+                            { required: true, message: '请输入职工号', trigger: 'blur' }
+                        ],
+                        XM: [
+                            { required: true, message: '请输入姓名', trigger: 'blur' }
+                        ],
+                        XB: [
+                            { required: true, message: '请选择性别', trigger: 'change' }
+                        ]
+                    }
+                }
+            },
+            methods: {
+                // 封装一个通用的请求方法，处理所有分页、搜索、排序情况
+                fetchData() {
+                    axios.get('/api/JSXXBApi/GetTeachers', {
+                        params: {
+                            keyword: this.searchKey,     // 这里的参数如果为空，后端会自动忽略过滤
+                            gender: this.selectedGender,
+                            page: this.currentPage,
+                            pageSize: this.pageSize,
+                            sortBy: this.sortBy,
+                            sortOrder: this.sortOrder
+                        }
+                    })
+                        .then(response => {
+                            this.teacherList = response.data.data;
+                            this.totalCount = response.data.totalCount;
+                        })
+                        .catch(error => {
+                            // 拦截器已处理401，这里处理其他错误
+                            if (error.response && error.response.status !== 401) {
+                                this.$message.error('获取数据失败');
+                            }
+                        });
+                },
+
+                // 加载教师数据（带分页和排序）
+                loadTeacherData() {
+                    this.fetchData();
+                },
+                // 执行搜索（带分页和排序）
+                searchTeachers() {
+                    this.currentPage = 1; // 搜索时重置为第一页
+                    this.fetchData();
+                },
+                // 分页大小改变
+                handleSizeChange(val) {
+                    this.pageSize = val;
+                    this.fetchData();
+                },
+
+                // 当前页码改变
+                handleCurrentChange(val) {
+                    this.currentPage = val;
+                    this.fetchData();
+                },
+
+                // 排序改变(功能 1: 排序)
+                handleSortChange({ prop, order }) {
+                    if (order) {
+                        this.sortBy = prop;
+                        this.sortOrder = order === 'ascending' ? 'asc' : 'desc';
+                        this.fetchData();
+                    } else {
+                        // 清除排序时，恢复默认排序（按 ZGH 升序）
+                        this.sortBy = 'ZGH';
+                        this.sortOrder = 'asc';
+                        this.fetchData();
+                    }
+                },
+
+                // 批量操作：处理多选 (功能 3: 批量编辑)
+                handleSelectionChange(selection) {
+                    this.selectedTeachers = selection;
+                },
+
+                // ----------------- 新增/删除/编辑 -----------------
+                // 显示新增弹窗
+                showAddDialog() {
+                    this.addForm = {};
+                    this.addDialogVisible = true;
+
+                    // 重置校验状态
+                    this.$nextTick(() => {
+                        this.$refs.addForm.clearValidate();
+                    });
+
+                },
+                // 保存新增数据
+                saveAdd() {
+                    this.$refs.addForm.validate((valid) => {
+                        if (valid) {
+                            axios.post('/api/JSXXBApi/Add', this.addForm)
+                                .then(response => {
+                                    this.$message.success('新增成功');
+                                    this.addDialogVisible = false;
+                                    this.loadTeacherData();
+                                })
+                                .catch(error => {
+                                    const errorMsg = error.response?.data?.Message || '新增失败';
+                                    this.$message.error('新增失败：' + errorMsg);
+                                });
+                        }
+                    });
+                },
+                // 删除教师
+                handleDelete(zgh) {
+                    this.$confirm('确定要删除这条记录吗?', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        axios.post('/api/JSXXBApi/Delete', zgh, {
+                            // headers核心作用：传递后端需要的上下文
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                            .then(response => {
+                                this.$message.success('删除成功');
+                                this.loadTeacherData();
+                            })
+                            .catch(error => {
+                                this.$message.error('删除失败：' + error.message);
+                            });
+                    }).catch(() => {
+                        this.$message.info('已取消删除');
+                    });
+                },
+
+                // 导出Excel
+                exportExcel() {
+                    window.open('/api/JSXXBApi/ExportExcel');
+                },
+
+
+                // 重置搜索条件
+                resetSearch() {
+                    this.searchKey = '';
+                    this.selectedGender = '';
+                    this.currentPage = 1;
+                    this.fetchData();
+                },
+                // 处理编辑按钮点击
+                handleEdit(row) {
+                    // 深拷贝选中行数据到表单
+                    this.form = JSON.parse(JSON.stringify(row));
+                    // 显示弹窗
+                    this.dialogVisible = true;
+                },
+                // 保存编辑内容
+                saveEdit() {
+                    // 1. 校验出生日期格式（避免格式错误）
+                    if (this.form.CSRQ && !/^\d{4}-\d{2}-\d{2}$/.test(this.form.CSRQ)) {
+                        this.$message.error('出生日期格式错误，请使用 yyyy-MM-dd 格式');
+                        return;
+                    }
+                    // 2. 明确指定 POST 方法，且设置正确的 Content-Type
+                    axios({
+                        url: '/api/JSXXBApi/Update',
+                        method: 'post', // 关键：必须指定为 POST
+                        data: this.form, // 传递表单数据（后端模型绑定）
+                        headers: {
+                            'Content-Type': 'application/json' // 确保后端能正确解析 JSON 数据
+                        }
+                    })
+                        .then(response => {
+                            this.$message.success('编辑成功');
+                            this.dialogVisible = false;
+                            this.loadTeacherData(); // 刷新表格
+                        })
+                        .catch(error => {
+                            // 优化错误提示：获取后端返回的具体错误信息
+                            const errorMsg = error.response?.data?.Message || error.message;
+                            this.$message.error('编辑失败：' + errorMsg);
+                            console.error('错误详情：', error);
+                        });
+                },
+
+
+                // ----------------- 功能 3: 批量编辑 -----------------
+                showBatchEditDialog() {
+                    if (this.selectedTeachers.length === 0) {
+                        this.$message.warning('请至少选择一条记录进行批量编辑');
+                        return;
+                    }
+                    this.batchEditForm = { XB: '', ZZMM: '', MZ: '' };
+                    this.batchEditFields = { XB: false, ZZMM: false, MZ: false };
+                    this.batchEditDialogVisible = true;
+                },
+
+                saveBatchEdit() {
+                    const zghList = this.selectedTeachers.map(t => t.ZGH);
+                    const updateData = {
+                        zghList: zghList,
+                        updateFields: {}
+                    };
+
+                    let fieldCount = 0;
+
+                    if (this.batchEditFields.XB) {
+                        if (!this.batchEditForm.XB) {
+                            this.$message.error('请为选定的性别字段选择值');
+                            return;
+                        }
+                        updateData.updateFields.XB = this.batchEditForm.XB;
+                        fieldCount++;
+                    }
+
+                    if (this.batchEditFields.ZZMM) {
+                        if (!this.batchEditForm.ZZMM) {
+                            this.$message.error('请为选定的政治面貌字段选择值');
+                            return;
+                        }
+                        updateData.updateFields.ZZMM = this.batchEditForm.ZZMM;
+                        fieldCount++;
+                    }
+
+                    if (this.batchEditFields.MZ) {
+                        if (!this.batchEditForm.MZ) {
+                            this.$message.error('请为选定的民族字段选择值');
+                            return;
+                        }
+                        updateData.updateFields.MZ = this.batchEditForm.MZ;
+                        fieldCount++;
+                    }
+
+                    if (fieldCount === 0) {
+                        this.$message.warning('请至少勾选一个要修改的字段');
+                        return;
+                    }
+
+                    axios.post('/api/JSXXBApi/BatchUpdate', updateData)
+                        .then(response => {
+                            this.$message.success(`批量编辑成功，共修改 ${zghList.length} 条记录`);
+                            this.batchEditDialogVisible = false;
+                            this.loadTeacherData();
+                        })
+                        .catch(error => {
+                            const errorMsg = error.response?.data?.Message || error.message;
+                            this.$message.error('批量编辑失败：' + errorMsg);
+                        });
+                },
+
+                // ----------------- 功能 2: 导入 -----------------
+                showImportDialog() {
+                    this.importDialogVisible = true;
+                    this.importStep = 0;
+                    this.fileList = [];
+                },
+
+                // 下载导入模板
+                downloadImportTemplate() {
+                    window.open('/api/JSXXBApi/DownloadTemplate');
+                },
+
+                // 上传前的校验
+                beforeImportUpload(file) {
+                    const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                        file.type === 'application/vnd.ms-excel';
+                    const isLt5M = file.size / 1024 / 1024 < 5;
+
+                    if (!isExcel) {
+                        this.$message.error('上传文件只能是 xls/xlsx 格式!');
+                    }
+                    if (!isLt5M) {
+                        this.$message.error('上传文件大小不能超过 5MB!');
+                    }
+                    return isExcel && isLt5M;
+                },
+
+                handleExceed(files, fileList) {
+                    this.$message.warning(`当前限制选择 1 个文件，本次选择了 ${files.length} 个文件，共选择了 ${files.length + fileList.length} 个文件`);
+                },
+
+                // 导入成功处理
+                handleImportSuccess(response, file, fileList) {
+                    this.importResult.successCount = response.SuccessCount;
+                    this.importResult.failCount = response.FailCount;
+                    this.importResult.details = response.Details;
+                    this.importStep = 2; // 进入结果查看步骤
+                    this.loadTeacherData(); // 刷新数据
+                    this.fileList = [];
+                },
+
+                // 导入失败处理
+                handleImportError(err, file, fileList) {
+                    this.$message.error('文件上传失败，请检查网络或文件格式！');
+                    this.fileList = [];
+                }
+            },
+
+            mounted() {
+                this.fetchData();
+            },
+
+
+
+        });
+    </script>
+</body>
+</html>
