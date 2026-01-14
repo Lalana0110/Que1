@@ -2,11 +2,16 @@
 
 一个基于 ASP.NET Web API 和 Vue.js 的前后端分离项目，实现了教师信息的全流程 CRUD 管理。系统包含完整的用户认证、数据管理、批量操作与数据导入导出功能。
 
-**在线演示:** (如果有的话可以写在这里，例如: http://your-demo-site.com)
+
 **后端技术:** ASP.NET Web API, Entity Framework, SQL Server
 **前端技术:** Vue.js, Element UI, Axios
 
 <img width="458" height="408" alt="e05ca377-92a4-4642-b856-05a39f0c1b1f" src="https://github.com/user-attachments/assets/9c392161-aeb6-4555-a10a-fc6715ab30eb" />
+<img width="394" height="363" alt="image" src="https://github.com/user-attachments/assets/ace4a1fe-5c57-4c0d-9bc5-7243f3d6ba1c" />
+<img width="1919" height="1006" alt="c36e4f80-2c14-48d2-866b-ea81d0385a5b" src="https://github.com/user-attachments/assets/0b4fffee-dd52-4ae8-9493-9e182caa75ee" />
+
+
+
 
 
 
