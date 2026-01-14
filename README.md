@@ -30,8 +30,8 @@
 
 1.  **克隆项目**
 bash
-git clone https://github.com/your-username/your-repository-name.git
-cd your-repository-name
+git clone https://github.com/Lalana0110/Que1.git
+cd Que1
 
 ### 环境要求
 
