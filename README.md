@@ -5,15 +5,11 @@
 
 **后端技术:** ASP.NET Web API, Entity Framework, SQL Server
 **前端技术:** Vue.js, Element UI, Axios
-
+主页面展示：（详细功能在本文末尾）
+管理用户登录页面：
 <img width="458" height="408" alt="e05ca377-92a4-4642-b856-05a39f0c1b1f" src="https://github.com/user-attachments/assets/9c392161-aeb6-4555-a10a-fc6715ab30eb" />
-<img width="394" height="363" alt="image" src="https://github.com/user-attachments/assets/ace4a1fe-5c57-4c0d-9bc5-7243f3d6ba1c" />
-<img width="1832" height="864" alt="712e821d-5d65-4309-833c-b1755df257b6" src="https://github.com/user-attachments/assets/b696fae8-e337-4240-9c77-7b8a431c6bb3" />
-
-
-
-
-
+教师信息页面：
+<img width="1914" height="917" alt="d21523225ef86f990398214ea6ac6263" src="https://github.com/user-attachments/assets/ef6dae8a-aaf4-4433-8a7f-cfe931786dee" />
 
 
 ## ✨ 功能特性
@@ -72,3 +68,26 @@ Teacher-Management-System/
 ├── Login.html # 登录页面
 ├── HtmlPage1.html # 教师信息管理主页面
 └── README.md
+
+注册管理用户功能：
+<img width="394" height="363" alt="image" src="https://github.com/user-attachments/assets/ace4a1fe-5c57-4c0d-9bc5-7243f3d6ba1c" />
+新增教师信息：
+<img width="498" height="622" alt="b4e778b18aa767242e1c10ef0ee85e70" src="https://github.com/user-attachments/assets/9bb4fbb6-c00e-4db4-abf7-d951241263e8" />
+导入教师信息：
+<img width="607" height="331" alt="fddcc97466335dc7dcc977957a0346c8" src="https://github.com/user-attachments/assets/886037dc-7d4b-4aa6-9ffc-3379f4772ac1" />
+导出的excel显示：
+<img width="804" height="390" alt="19c2830cca65bd996a358dd84fef853f" src="https://github.com/user-attachments/assets/f48ae363-5f9b-45e3-9fdc-5247e62ebd0c" />
+查询功能：
+<img width="898" height="331" alt="e840345fd5adb4b18506907dc967c93c" src="https://github.com/user-attachments/assets/8a79038e-d64a-4ad5-a8b8-cf26ff9354b7" />
+教师详情：
+<img width="501" height="510" alt="d89570cea6eb5efd6f880cabd124ebed" src="https://github.com/user-attachments/assets/3be9965b-9cda-4b27-baac-94f7e07c0b15" />
+编辑单个教师：
+<img width="497" height="629" alt="f94a555e06eb324f8794a53bbd66144d" src="https://github.com/user-attachments/assets/9ae2d353-16da-48ca-8045-014bb4495f33" />
+编辑多个教师：
+<img width="1533" height="430" alt="d40f3a1a659c9125b504889be81bfa1f" src="https://github.com/user-attachments/assets/b94ec82a-e27f-4e8f-81b9-f9503334d466" />
+<img width="503" height="434" alt="f7fd17b136fca3a28ecd8fd23647e72f" src="https://github.com/user-attachments/assets/aec691ff-9f1b-465b-9f95-f4f8a02f6ef4" />
+
+
+
+
+
