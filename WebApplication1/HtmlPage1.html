@@ -1,13 +1,15 @@
-﻿<!DOCTYPE html>
+﻿
+
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <title>教师列表</title>
-    <!-- Vue CDN -->
+    <!--Vue CDN-->
     <script src="Scripts/vue.min.js"></script>
-    <!-- Axios CDN -->
+    <!--Axios CDN-->
     <script src="https://cdn.bootcdn.net/ajax/libs/axios/0.27.2/axios.min.js"></script>
-    <!-- Element UI -->
+    <!--Element UI-->
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/element-ui/2.15.14/theme-chalk/index.css">
     <script src="https://cdn.bootcdn.net/ajax/libs/element-ui/2.15.14/index.js"></script>
 </head>
@@ -17,17 +19,17 @@
             <div slot="header">
                 <h2>教师信息列表</h2>
             </div>
-
-            <!-- 查询区域 -->
-            <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+            <!--查询区域 - 优化布局-->
+            <div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
                 <el-input v-model="searchKey"
                           placeholder="请输入工号或姓名搜索"
-                          style="width: 300px;"
+                          style="width: 250px;"
                           clearable>
                 </el-input>
 
                 <el-select v-model="selectedGender"
                            placeholder="请选择性别"
+                           style="width: 120px;"
                            clearable>
                     <el-option label="男" value="男"></el-option>
                     <el-option label="女" value="女"></el-option>
@@ -35,28 +37,28 @@
 
                 <el-button type="primary" @click="searchTeachers">查询</el-button>
                 <el-button @click="resetSearch">重置</el-button>
-                <el-button type="success" @click="showAddDialog">新增</el-button>
 
-                <!-- 新增功能按钮 -->
-                <el-button type="info" @click="showBatchEditDialog" :disabled="selectedTeachers.length === 0">批量编辑 ({{ selectedTeachers.length }})</el-button>
-                <el-button type="primary" @click="showImportDialog">导入</el-button>
-
-                <el-button type="warning" @click="exportExcel">导出Excel</el-button>
+                 <!--新增/批量/导出 按钮组，推到右侧--> 
+                <div style="margin-left: auto; display: flex; gap: 10px;">
+                    <el-button type="success" @click="showAddDialog">新增</el-button>
+                    <el-button type="info" @click="showBatchEditDialog" :disabled="selectedTeachers.length === 0">批量编辑 ({{ selectedTeachers.length }})</el-button>
+                    <el-button type="primary" @click="showImportDialog">导入</el-button>
+                    <el-button type="warning" @click="exportExcel">导出Excel</el-button>
+                </div>
             </div>
 
-            <!-- 教师列表表格 -->
-            <!-- 开启多选和自定义排序 -->
+            <!--教师列表表格 - 移除大部分固定宽度，使用自适应-->
             <el-table :data="teacherList"
                       border style="width: 100%"
                       @sort-change="handleSortChange"
                       @selection-change="handleSelectionChange">
                 <el-table-column type="selection" width="55"></el-table-column>
-                <el-table-column prop="ZGH" label="职工号" width="120" sortable="custom"></el-table-column>
-                <el-table-column prop="XM" label="姓名" width="100" sortable="custom"></el-table-column>
+                <el-table-column prop="ZGH" label="职工号" sortable="custom"></el-table-column>
+                <el-table-column prop="XM" label="姓名" sortable="custom"></el-table-column>
                 <el-table-column prop="XB" label="性别" width="80" sortable="custom"></el-table-column>
-                <el-table-column prop="CSRQ" label="出生日期" width="150" sortable="custom"></el-table-column>
-                <el-table-column prop="LXDH" label="联系电话" width="150" sortable="custom"></el-table-column>
-                <el-table-column prop="ZZMM" label="政治面貌" width="120" sortable="custom"></el-table-column>
+                <el-table-column prop="CSRQ" label="出生日期" sortable="custom"></el-table-column>
+                <el-table-column prop="LXDH" label="联系电话" sortable="custom"></el-table-column>
+                <el-table-column prop="ZZMM" label="政治面貌" sortable="custom"></el-table-column>
                 <el-table-column prop="MZ" label="民族" width="100" sortable="custom"></el-table-column>
                 <el-table-column label="操作" width="160">
                     <template slot-scope="scope">
@@ -66,8 +68,7 @@
                 </el-table-column>
             </el-table>
         </el-card>
-
-        <!-- 分页控件 -->
+        <!--分页控件 - 居右对齐-->
         <div style="margin-top: 15px; text-align: right;">
             <el-pagination @size-change="handleSizeChange"
                            @current-change="handleCurrentChange"
@@ -78,27 +79,25 @@
                            :total="totalCount">
             </el-pagination>
         </div>
-
-        <!-- 新增教师弹窗 -->
+        <!--新增教师弹窗-->
         <el-dialog title="新增教师信息" :visible.sync="addDialogVisible" width="500px">
             <el-form :model="addForm" :rules="addRules" ref="addForm" label-width="100px">
-                <!-- 职工号 -->
+                
                 <el-form-item label="职工号" prop="ZGH">
                     <el-input v-model="addForm.ZGH" placeholder="请输入职工号"></el-input>
                 </el-form-item>
-                <!-- 姓名 -->
+                
                 <el-form-item label="姓名" prop="XM">
                     <el-input v-model="addForm.XM" placeholder="请输入姓名"></el-input>
                 </el-form-item>
-                <!-- 性别 -->
+                
                 <el-form-item label="性别" required prop="XB">
                     <el-select v-model="addForm.XB" placeholder="请选择性别">
                         <el-option label="男" value="男"></el-option>
                         <el-option label="女" value="女"></el-option>
                     </el-select>
                 </el-form-item>
-                <!-- 其他字段与编辑弹窗相同 -->
-                <!-- 出生日期 -->
+               
                 <el-form-item label="出生日期">
                     <el-date-picker v-model="addForm.CSRQ"
                                     type="date"
@@ -106,11 +105,11 @@
                                     value-format="yyyy-MM-dd">
                     </el-date-picker>
                 </el-form-item>
-                <!-- 联系电话 -->
+                
                 <el-form-item label="联系电话">
                     <el-input v-model="addForm.LXDH" placeholder="请输入联系电话"></el-input>
                 </el-form-item>
-                <!-- 政治面貌 -->
+                
                 <el-form-item label="政治面貌">
                     <el-select v-model="addForm.ZZMM" placeholder="请选择政治面貌">
                         <el-option label="中共党员" value="中共党员"></el-option>
@@ -120,7 +119,7 @@
                         <el-option label="群众" value="群众"></el-option>
                     </el-select>
                 </el-form-item>
-                <!-- 民族 -->
+               
                 <el-form-item label="民族">
                     <el-select v-model="addForm.MZ" placeholder="请选择民族">
                         <el-option label="汉族" value="汉族"></el-option>
@@ -139,26 +138,25 @@
                 <el-button type="primary" @click="saveAdd">确定</el-button>
             </div>
         </el-dialog>
-
-        <!-- 编辑弹窗 -->
+        <!--编辑弹窗-->
         <el-dialog title="编辑教师信息" :visible.sync="dialogVisible" width="500px">
             <el-form :model="form" label-width="100px">
-                <!-- 职工号（只读） -->
+                
                 <el-form-item label="职工号">
                     <el-input v-model="form.ZGH" disabled></el-input>
                 </el-form-item>
-                <!-- 姓名（只读） -->
+                
                 <el-form-item label="姓名">
                     <el-input v-model="form.XM" disabled></el-input>
                 </el-form-item>
-                <!-- 性别 -->
+                
                 <el-form-item label="性别" required>
                     <el-select v-model="form.XB" placeholder="请选择性别">
                         <el-option label="男" value="男"></el-option>
                         <el-option label="女" value="女"></el-option>
                     </el-select>
                 </el-form-item>
-                <!-- 出生日期 -->
+                
                 <el-form-item label="出生日期">
                     <el-date-picker v-model="form.CSRQ"
                                     type="date"
@@ -166,11 +164,11 @@
                                     value-format="yyyy-MM-dd">
                     </el-date-picker>
                 </el-form-item>
-                <!-- 联系电话 -->
+                
                 <el-form-item label="联系电话">
                     <el-input v-model="form.LXDH" placeholder="请输入联系电话"></el-input>
                 </el-form-item>
-                <!-- 政治面貌 -->
+                
                 <el-form-item label="政治面貌">
                     <el-select v-model="form.ZZMM" placeholder="请选择政治面貌">
                         <el-option label="中共党员" value="中共党员"></el-option>
@@ -180,7 +178,7 @@
                         <el-option label="群众" value="群众"></el-option>
                     </el-select>
                 </el-form-item>
-                <!-- 民族 -->
+                
                 <el-form-item label="民族">
                     <el-select v-model="form.MZ" placeholder="请选择民族">
                         <el-option label="汉族" value="汉族"></el-option>
@@ -199,12 +197,11 @@
                 <el-button type="primary" @click="saveEdit">确定</el-button>
             </div>
         </el-dialog>
-
-        <!-- 新增：批量编辑弹窗 -->
+        <!--批量编辑弹窗-->
         <el-dialog title="批量编辑教师信息" :visible.sync="batchEditDialogVisible" width="500px">
             <el-alert title="仅对已选中的记录进行编辑，未勾选的字段将保持不变。" type="info" show-icon :closable="false" style="margin-bottom: 20px;"></el-alert>
             <el-form :model="batchEditForm" label-width="100px">
-                <!-- 性别 -->
+                
                 <el-form-item label="性别">
                     <el-checkbox v-model="batchEditFields.XB" style="margin-right: 15px;">启用</el-checkbox>
                     <el-select v-model="batchEditForm.XB" placeholder="请选择性别" :disabled="!batchEditFields.XB">
@@ -212,8 +209,7 @@
                         <el-option label="女" value="女"></el-option>
                     </el-select>
                 </el-form-item>
-
-                <!-- 政治面貌 -->
+                
                 <el-form-item label="政治面貌">
                     <el-checkbox v-model="batchEditFields.ZZMM" style="margin-right: 15px;">启用</el-checkbox>
                     <el-select v-model="batchEditForm.ZZMM" placeholder="请选择政治面貌" :disabled="!batchEditFields.ZZMM">
@@ -224,8 +220,7 @@
                         <el-option label="群众" value="群众"></el-option>
                     </el-select>
                 </el-form-item>
-
-                <!-- 民族 -->
+                
                 <el-form-item label="民族">
                     <el-checkbox v-model="batchEditFields.MZ" style="margin-right: 15px;">启用</el-checkbox>
                     <el-select v-model="batchEditForm.MZ" placeholder="请选择民族" :disabled="!batchEditFields.MZ">
@@ -245,8 +240,7 @@
                 <el-button type="primary" @click="saveBatchEdit">确定批量修改</el-button>
             </div>
         </el-dialog>
-
-        <!-- 新增：导入弹窗 -->
+        <!--新增：导入弹窗-->
         <el-dialog title="导入教师信息" :visible.sync="importDialogVisible" width="600px">
             <el-steps :active="importStep" align-center style="margin-bottom: 20px;">
                 <el-step title="下载模板" icon="el-icon-download"></el-step>
@@ -656,9 +650,6 @@
             mounted() {
                 this.fetchData();
             },
-
-
-
         });
     </script>
 </body>
