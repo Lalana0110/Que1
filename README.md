@@ -6,9 +6,11 @@
 **后端技术:** ASP.NET Web API, Entity Framework, SQL Server
 **前端技术:** Vue.js, Element UI, Axios
 主页面展示：（详细功能在本文末尾）
-管理用户登录页面：/r
+管理用户登录页面:
 <img width="458" height="408" alt="e05ca377-92a4-4642-b856-05a39f0c1b1f" src="https://github.com/user-attachments/assets/9c392161-aeb6-4555-a10a-fc6715ab30eb" />
-教师信息页面：/r
+
+教师信息页面：
+
 <img width="1914" height="917" alt="d21523225ef86f990398214ea6ac6263" src="https://github.com/user-attachments/assets/ef6dae8a-aaf4-4433-8a7f-cfe931786dee" />
 
 
